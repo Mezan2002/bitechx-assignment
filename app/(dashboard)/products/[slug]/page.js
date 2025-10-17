@@ -10,11 +10,11 @@ import { format } from "date-fns";
 import { ArrowLeft, Edit, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { use, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 
-export default function ProductDetailPage({ params }) {
-  const { slug } = use(params);
+export default function ProductDetailPage() {
+  const { slug } = useParams();
   const { data: product, isLoading } = useProduct(slug);
   const deleteMutation = useDeleteProduct();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

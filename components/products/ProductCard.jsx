@@ -10,18 +10,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Edit, Eye, Trash2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function ProductCard({ product, onDelete }) {
+  const imgSrc = (product.images?.[0] || "").trim() || "/placeholder.png";
+
+  // Only use remote image if it looks like a full URL
+  const isRemote = imgSrc.startsWith("http");
+  const finalSrc = isRemote ? imgSrc : "/placeholder.png"; // or handle local paths differently
+
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="hover:shadow-lg transition-shadow rounded-none">
       <CardHeader>
-        <img
-          src={product.images?.[0] || "/placeholder.png"}
-          alt={product.name}
+        <Image
+          width={400}
+          height={400}
+          src={finalSrc}
+          alt={product?.name || "Product Image"}
           className="w-full h-48 object-cover rounded-md mb-4"
         />
-        <CardTitle className="text-lg line-clamp-1">{product.name}</CardTitle>
+        <CardTitle className="text-lg line-clamp-1">
+          {product?.name || "Product"}
+        </CardTitle>
       </CardHeader>
 
       <CardContent>

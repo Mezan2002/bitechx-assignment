@@ -10,14 +10,14 @@ import { productsAPI } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
-export default function EditProductPage({ params }) {
-  const { id } = params;
+export default function EditProductPage() {
+  const { id } = useParams();
 
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
-      // Since we need to get by ID but API only supports slug, we'll need to fetch all and find
       const response = await productsAPI.getAll({});
       const foundProduct = response.data.find((p) => p.id === id);
       if (!foundProduct) throw new Error("Product not found");
