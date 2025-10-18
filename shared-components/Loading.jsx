@@ -3,7 +3,8 @@
 const Loading = ({ fullPage = false }) => {
   const content = (
     <div className="flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      {/* Black circular spinner with no fill, just border */}
+      <div className="animate-spin rounded-full size-12 border-4 border-black border-t-transparent"></div>
     </div>
   );
 
