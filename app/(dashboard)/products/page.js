@@ -101,10 +101,6 @@ export default function ProductsPage() {
   // Handle rate limit error
   const isRateLimitError = displayError?.response?.status === 429;
 
-  console.log("🚀 ~ ProductsPage ~ displayError:", displayError);
-  console.log("🚀 ~ ProductsPage ~ isRateLimitError:", isRateLimitError);
-  console.log("🚀 ~ ProductsPage ~ displayError:", displayError);
-  console.log("🚀 ~ ProductsPage ~ isRateLimitError:", isRateLimitError);
   return (
     <div>
       {/* Header */}
