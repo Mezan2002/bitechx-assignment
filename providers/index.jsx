@@ -25,7 +25,7 @@ function AuthRehydrator({ children }) {
     } finally {
       setIsRehydrating(false);
     }
-  }, []); // Empty deps - only run once
+  }, []);
 
   if (isRehydrating) {
     return (
@@ -52,7 +52,7 @@ export function Providers({ children }) {
       }
     });
     return unsubscribe;
-  }, []); // Empty deps - only setup once
+  }, []);
 
   return (
     <Provider store={store}>
