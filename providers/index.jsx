@@ -3,49 +3,63 @@
 import { queryClient } from "@/lib/queryClient";
 import { setCredentials } from "@/redux/auth/authSlice";
 import { store } from "@/redux/store";
+import Loading from "@/shared-components/Loading";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Provider } from "react-redux";
 
-export function Providers({ children }) {
+function AuthRehydrator({ children }) {
+  const [isRehydrating, setIsRehydrating] = useState(true);
+
   useEffect(() => {
-    // Rehydrate auth from localStorage
-    const persistedState = localStorage.getItem("persist:root");
-    if (persistedState) {
-      try {
-        const parsedState = JSON.parse(persistedState);
-        const authState = JSON.parse(parsedState.auth || "{}");
-        if (authState.token) {
-          store.dispatch(
-            setCredentials({
-              token: authState.token,
-              email: authState.email,
-            })
-          );
-        }
-      } catch (error) {
-        console.error("Failed to rehydrate state:", error);
+    // Rehydrate auth from localStorage IMMEDIATELY
+    try {
+      const token = localStorage.getItem("auth_token");
+      const email = localStorage.getItem("auth_email");
+
+      if (token && email) {
+        store.dispatch(setCredentials({ token, email }));
       }
+    } catch (error) {
+      console.error("Failed to rehydrate auth:", error);
+    } finally {
+      setIsRehydrating(false);
     }
   }, []);
 
+  // Show nothing while rehydrating (prevents flash)
+  if (isRehydrating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
+
+  return children;
+}
+
+export function Providers({ children }) {
   // Persist state to localStorage on changes
   useEffect(() => {
     const unsubscribe = store.subscribe(() => {
       const state = store.getState();
-      localStorage.setItem(
-        "persist:root",
-        JSON.stringify({
-          auth: JSON.stringify(state.auth),
-        })
-      );
+      if (state.auth.token) {
+        localStorage.setItem("auth_token", state.auth.token);
+        localStorage.setItem("auth_email", state.auth.email);
+      } else {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("auth_email");
+      }
     });
     return unsubscribe;
   }, []);
 
   return (
     <Provider store={store}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthRehydrator>{children}</AuthRehydrator>
+      </QueryClientProvider>
     </Provider>
   );
 }
