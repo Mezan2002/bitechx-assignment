@@ -16,7 +16,7 @@ import Pagination from "@/shared-components/Pagination";
 import { Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,30 +32,43 @@ export default function ProductsPage() {
 
   const debouncedSearch = useDebounce(searchQuery, 500);
 
+  // Create stable query params
+  const queryParams = useMemo(
+    () => ({
+      offset,
+      limit: itemsPerPage,
+      ...(categoryId && { categoryId }),
+    }),
+    [offset, itemsPerPage, categoryId]
+  );
+
   // Fetch products with optional category filter
   const {
     data: products,
     isLoading,
     error,
     refetch,
-  } = useProducts({
-    offset,
-    limit: itemsPerPage,
-    ...(categoryId && { categoryId }),
-  });
+  } = useProducts(queryParams);
 
-  const { data: allProducts, isLoading: isLoadingAll } = useProducts({
-    ...(categoryId && { categoryId }),
-  });
-
-  const { data: searchResults, isLoading: isSearching } =
-    useSearchProducts(debouncedSearch);
+  // Only fetch search results when searching
+  const {
+    data: searchResults,
+    isLoading: isSearching,
+    error: searchError,
+  } = useSearchProducts(debouncedSearch);
 
   const { data: categories } = useCategories();
   const deleteMutation = useDeleteProduct();
 
   const displayProducts = debouncedSearch ? searchResults : products;
   const showPagination = !debouncedSearch && products;
+  const displayError = debouncedSearch ? searchError : error;
+
+  // Calculate total from current products length (approximate)
+  const approximateTotal =
+    products?.length === itemsPerPage
+      ? (currentPage + 2) * itemsPerPage // Assume more pages exist
+      : currentPage * itemsPerPage; // Last page
 
   // Get current category details
   const currentCategory = categories?.find((cat) => cat.id === categoryId);
@@ -68,7 +81,6 @@ export default function ProductsPage() {
     if (deleteProduct) {
       deleteMutation.mutate(deleteProduct.id, {
         onSettled: () => {
-          // Close dialog after delete (success or error)
           setDeleteProduct(null);
         },
       });
@@ -87,7 +99,7 @@ export default function ProductsPage() {
   ];
 
   // Handle rate limit error
-  const isRateLimitError = error?.response?.status === 429;
+  const isRateLimitError = displayError?.response?.status === 429;
 
   return (
     <div>
@@ -119,9 +131,12 @@ export default function ProductsPage() {
                   )}
                 </div>
 
-                <span className="text-sm font-medium text-primary">
-                  ({allProducts?.length || 0} results)
-                </span>
+                {!isLoading && products && (
+                  <span className="text-sm font-medium text-primary">
+                    ({products.length}{" "}
+                    {products.length === 1 ? "result" : "results"})
+                  </span>
+                )}
               </div>
             </div>
             <div>
@@ -137,24 +152,24 @@ export default function ProductsPage() {
       </div>
 
       {/* Error State - Rate Limit */}
-      {error && isRateLimitError && (
+      {displayError && isRateLimitError && (
         <div className="container mx-auto px-4 mb-6">
           <ErrorCard
             variant="alert"
             type="warning"
             title="Rate Limit Exceeded"
-            message="You've made too many requests. Please wait a moment before trying again."
+            message="Too many requests. Please wait 30 seconds before trying again."
             onRetry={() => {
               setTimeout(() => {
-                refetch();
-              }, 2000);
+                window.location.reload();
+              }, 30000); // Wait 30 seconds
             }}
           />
         </div>
       )}
 
       {/* Error State - Other Errors */}
-      {error && !isRateLimitError && (
+      {displayError && !isRateLimitError && (
         <ErrorCard
           variant="full"
           type="server"
@@ -166,66 +181,62 @@ export default function ProductsPage() {
       )}
 
       {/* Products Grid */}
-      {!error &&
-        !isLoading &&
-        !isLoadingAll &&
-        !isSearching &&
-        displayProducts && (
-          <>
-            {displayProducts.length === 0 ? (
-              <div className="container mx-auto px-4">
-                <div className="text-center py-12">
-                  <p className="text-gray-500 text-lg mb-4">
-                    {searchQuery
-                      ? "No products found matching your search"
-                      : categoryId
-                      ? `No products found in ${currentCategory?.name} category`
-                      : "No products available"}
-                  </p>
-                  {(searchQuery || categoryId) && (
-                    <div className="flex gap-2 justify-center">
-                      {searchQuery && (
-                        <Button
-                          variant="outline"
-                          onClick={() => setSearchQuery("")}
-                        >
-                          Clear Search
-                        </Button>
-                      )}
-                      {categoryId && (
-                        <Button variant="outline" onClick={handleClearFilter}>
-                          View All Products
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
+      {!displayError && !isLoading && !isSearching && displayProducts && (
+        <>
+          {displayProducts.length === 0 ? (
+            <div className="container mx-auto px-4">
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg mb-4">
+                  {searchQuery
+                    ? "No products found matching your search"
+                    : categoryId
+                    ? `No products found in ${currentCategory?.name} category`
+                    : "No products available"}
+                </p>
+                {(searchQuery || categoryId) && (
+                  <div className="flex gap-2 justify-center">
+                    {searchQuery && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setSearchQuery("")}
+                      >
+                        Clear Search
+                      </Button>
+                    )}
+                    {categoryId && (
+                      <Button variant="outline" onClick={handleClearFilter}>
+                        View All Products
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 container mx-auto px-4">
-                {displayProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onDelete={handleDelete}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Pagination */}
-            {showPagination && products.length > 0 && (
-              <div className="py-8">
-                <Pagination
-                  currentPage={currentPage}
-                  totalItems={allProducts?.length || 0}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={setCurrentPage}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 container mx-auto px-4">
+              {displayProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onDelete={handleDelete}
                 />
-              </div>
-            )}
-          </>
-        )}
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {showPagination && products && products.length > 0 && (
+            <div className="py-8">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={approximateTotal}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmDialog

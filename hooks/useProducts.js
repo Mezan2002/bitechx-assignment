@@ -7,6 +7,7 @@ export const useProducts = (params = {}) => {
   return useQuery({
     queryKey: ["products", params],
     queryFn: () => productsAPI.getAll(params).then((res) => res.data),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
@@ -15,6 +16,7 @@ export const useProduct = (slug) => {
     queryKey: ["product", slug],
     queryFn: () => productsAPI.getBySlug(slug).then((res) => res.data),
     enabled: !!slug,
+    staleTime: 1000 * 60 * 5,
   });
 };
 
@@ -23,6 +25,7 @@ export const useSearchProducts = (searchedText) => {
     queryKey: ["products", "search", searchedText],
     queryFn: () => productsAPI.search(searchedText).then((res) => res.data),
     enabled: searchedText.length > 0,
+    staleTime: 1000 * 60 * 2, // 2 minutes for search
   });
 };
 
@@ -33,12 +36,19 @@ export const useCreateProduct = () => {
   return useMutation({
     mutationFn: (data) => productsAPI.create(data),
     onSuccess: () => {
+      // Only invalidate products queries
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Product created successfully!");
       router.push("/products");
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to create product");
+      if (error?.response?.status === 429) {
+        toast.error("Too many requests. Please wait a moment.");
+      } else {
+        toast.error(
+          error.response?.data?.message || "Failed to create product"
+        );
+      }
     },
   });
 };
@@ -49,14 +59,21 @@ export const useUpdateProduct = () => {
 
   return useMutation({
     mutationFn: ({ id, data }) => productsAPI.update(id, data),
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
+      // Only invalidate products queries
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["product"] });
       toast.success("Product updated successfully!");
       router.push("/products");
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to update product");
+      if (error?.response?.status === 429) {
+        toast.error("Too many requests. Please wait a moment.");
+      } else {
+        toast.error(
+          error.response?.data?.message || "Failed to update product"
+        );
+      }
     },
   });
 };
@@ -66,28 +83,25 @@ export const useDeleteProduct = () => {
 
   return useMutation({
     mutationFn: async (id) => {
-      // Call API (it returns 200 but doesn't actually delete from DB)
       const response = await productsAPI.delete(id);
       return { id, data: response.data };
     },
 
-    // OPTIMISTIC UPDATE - Runs BEFORE the API call
+    // OPTIMISTIC UPDATE
     onMutate: async (productId) => {
-      // Cancel any outgoing refetches to prevent overwriting optimistic update
+      // Cancel outgoing queries
       await queryClient.cancelQueries({ queryKey: ["products"] });
 
-      // Snapshot all current product queries for rollback
+      // Snapshot for rollback
       const previousQueries = [];
 
-      // Get all queries that start with ["products"]
       queryClient
         .getQueriesData({ queryKey: ["products"] })
         .forEach(([queryKey, data]) => {
           if (data) {
-            // Save current state for rollback
             previousQueries.push({ queryKey, data });
 
-            // OPTIMISTICALLY remove the product from this query's data
+            // Optimistically remove product
             queryClient.setQueryData(queryKey, (old) => {
               if (Array.isArray(old)) {
                 return old.filter((product) => product.id !== productId);
@@ -97,31 +111,31 @@ export const useDeleteProduct = () => {
           }
         });
 
-      // Return context for rollback
       return { previousQueries, productId };
     },
 
-    // On success, show toast
-    onSuccess: (data, productId) => {
-      console.log("Product deleted (optimistically):", productId);
+    onSuccess: () => {
       toast.success("Product deleted successfully!");
+      // DON'T invalidate - keep optimistic update
     },
 
-    // On error, ROLLBACK the optimistic update
     onError: (error, productId, context) => {
-      console.error("Delete failed, rolling back:", error);
+      console.error("Delete failed:", error);
 
-      // Restore all previous query data
+      // Rollback on error
       if (context?.previousQueries) {
         context.previousQueries.forEach(({ queryKey, data }) => {
           queryClient.setQueryData(queryKey, data);
         });
       }
 
-      toast.error(error.response?.data?.message || "Failed to delete product");
+      if (error?.response?.status === 429) {
+        toast.error("Too many requests. Please wait a moment.");
+      } else {
+        toast.error(
+          error.response?.data?.message || "Failed to delete product"
+        );
+      }
     },
-
-    // Note: We DON'T invalidate queries because API doesn't actually delete
-    // If we invalidated, the product would come back from the server
   });
 };
