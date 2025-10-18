@@ -1,6 +1,7 @@
 "use client";
 
 import ProductCard from "@/components/products/ProductCard";
+import { Button } from "@/components/ui/button";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   useDeleteProduct,
@@ -10,6 +11,8 @@ import {
 import { BreadCrumb } from "@/shared-components/BreadCrumb";
 import DeleteConfirmDialog from "@/shared-components/DeleteConfirmDialog";
 import Pagination from "@/shared-components/Pagination";
+import { Plus } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 export default function ProductsPage() {
@@ -60,18 +63,23 @@ export default function ProductsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="py-5 border-b">
+      <div className="py-5">
         <div className="container mx-auto px-4">
           <BreadCrumb items={breadcrumbs} />
           <div className="mt-6 flex items-center justify-between">
             <h2 className="text-3xl font-semibold text-primary">
-              All Products
+              All Products{" "}
+              <span className="text-sm font-medium text-primary">
+                ({allProducts?.length || 0} results)
+              </span>
             </h2>
-            <div className="text-right">
-              <p className="text-xs font-medium text-gray-400">All Products</p>
-              <p className="text-lg font-medium text-primary leading-4">
-                {allProducts?.length || 0} results
-              </p>
+            <div>
+              <Link href="/products/create">
+                <Button className="rounded-none">
+                  <Plus />
+                  Add Products
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -85,7 +93,7 @@ export default function ProductsPage() {
               <p className="text-gray-500">No products found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 container mx-auto px-4">
               {displayProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -98,7 +106,7 @@ export default function ProductsPage() {
 
           {/* Pagination */}
           {showPagination && products.length > 0 && (
-            <div className="mt-8">
+            <div className="py-8">
               <Pagination
                 currentPage={currentPage}
                 totalItems={100}

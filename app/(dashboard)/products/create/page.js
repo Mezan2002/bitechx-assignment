@@ -1,12 +1,9 @@
 "use client";
 
-import ProductForm from "@/components/products/ProductForm";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCategories } from "@/hooks/useCategories";
 import { useCreateProduct } from "@/hooks/useProducts";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import CreateAndEditProduct from "@/shared-components/CreateAndEditProduct";
 
 export default function CreateProductPage() {
   const createMutation = useCreateProduct();
@@ -16,31 +13,21 @@ export default function CreateProductPage() {
     createMutation.mutate(data);
   };
 
-  return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <Link href="/products">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Products
-          </Button>
-        </Link>
+  if (categoriesLoading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <Skeleton className="h-96" />
       </div>
+    );
+  }
 
-      {createMutation.error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>
-            {createMutation.error.response?.data?.message ||
-              "Failed to create product"}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <ProductForm
-        onSubmit={handleSubmit}
-        isLoading={createMutation.isPending || categoriesLoading}
-        categories={categories || []}
-      />
-    </div>
+  return (
+    <CreateAndEditProduct
+      mode="create"
+      categories={categories || []}
+      onSubmit={handleSubmit}
+      isLoading={createMutation.isPending}
+      error={createMutation.error}
+    />
   );
 }

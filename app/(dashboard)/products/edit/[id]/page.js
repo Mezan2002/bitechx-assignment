@@ -1,19 +1,18 @@
 "use client";
 
-import ProductForm from "@/components/products/ProductForm";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCategories } from "@/hooks/useCategories";
 import { useUpdateProduct } from "@/hooks/useProducts";
 import { productsAPI } from "@/lib/api";
+import CreateAndEditProduct from "@/shared-components/CreateAndEditProduct";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { use } from "react";
 
-export default function EditProductPage() {
-  const { id } = useParams();
+export default function EditProductPage({ params }) {
+  const { id } = use(params);
+  const updateMutation = useUpdateProduct();
+  const { data: categories, isLoading: categoriesLoading } = useCategories();
 
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ["product", id],
@@ -25,49 +24,37 @@ export default function EditProductPage() {
     },
   });
 
-  const { data: categories, isLoading: categoriesLoading } = useCategories();
-  const updateMutation = useUpdateProduct();
-
   const handleSubmit = (data) => {
     updateMutation.mutate({ id, data });
   };
 
-  if (productLoading) {
+  if (productLoading || categoriesLoading) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="container mx-auto px-4 py-6">
         <Skeleton className="h-96" />
       </div>
     );
   }
 
-  return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <Link href="/products">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Products
-          </Button>
-        </Link>
-      </div>
-
-      {updateMutation.error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>
-            {updateMutation.error.response?.data?.message ||
-              "Failed to update product"}
-          </AlertDescription>
+  if (!product) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <Alert variant="destructive">
+          <AlertDescription>Product not found</AlertDescription>
         </Alert>
-      )}
+      </div>
+    );
+  }
 
-      {product && (
-        <ProductForm
-          initialData={product}
-          onSubmit={handleSubmit}
-          isLoading={updateMutation.isPending || categoriesLoading}
-          categories={categories || []}
-        />
-      )}
-    </div>
+  return (
+    <CreateAndEditProduct
+      mode="edit"
+      initialData={product}
+      categories={categories || []}
+      onSubmit={handleSubmit}
+      isLoading={updateMutation.isPending}
+      error={updateMutation.error}
+      productCreatedAt={product.createdAt}
+    />
   );
 }
