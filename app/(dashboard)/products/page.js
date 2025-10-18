@@ -11,6 +11,7 @@ import {
 } from "@/hooks/useProducts";
 import { BreadCrumb } from "@/shared-components/BreadCrumb";
 import DeleteConfirmDialog from "@/shared-components/DeleteConfirmDialog";
+import { ErrorCard } from "@/shared-components/ErrorCard";
 import Pagination from "@/shared-components/Pagination";
 import { Plus, X } from "lucide-react";
 import Link from "next/link";
