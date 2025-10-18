@@ -190,7 +190,9 @@ export default function CreateAndEditProduct({
                     onChange={(e) =>
                       handleChange("description", e.target.value)
                     }
-                    className={errors.description ? "border-red-500" : ""}
+                    className={`min-h-60 ${
+                      errors.description ? "border-red-500" : ""
+                    }`}
                   />
                   {errors.description && (
                     <p className="text-red-500 text-sm mt-1">
@@ -326,7 +328,9 @@ export default function CreateAndEditProduct({
                     onValueChange={(value) => handleChange("categoryId", value)}
                   >
                     <SelectTrigger
-                      className={errors.categoryId ? "border-red-500" : ""}
+                      className={`w-full ${
+                        errors.categoryId ? "border-red-500" : ""
+                      }`}
                     >
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
@@ -369,35 +373,6 @@ export default function CreateAndEditProduct({
                     </p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Product Status Card */}
-            <Card className="shadow-none">
-              <CardHeader>
-                <CardTitle className="text-lg">Product Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Status:</span>
-                    <span className="font-medium text-accent-green">
-                      {isEditMode ? "Active" : "Draft"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Visibility:</span>
-                    <span className="font-medium">Public</span>
-                  </div>
-                  {isEditMode && productCreatedAt && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Created:</span>
-                      <span className="font-medium text-xs">
-                        {new Date(productCreatedAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
               </CardContent>
             </Card>
           </div>

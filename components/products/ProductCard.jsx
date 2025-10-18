@@ -14,9 +14,9 @@ import { Edit, Eye, MoreHorizontal, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-export default function ProductCard({ product, onDelete }) {
+export default function ProductCard({ product, onDelete = () => {} }) {
   const router = useRouter();
-  const imgSrc = (product.images?.[0] || "").trim() || "/placeholder.png";
+  const imgSrc = (product?.images?.[0] || "").trim() || "/placeholder.png";
   const isRemote = imgSrc.startsWith("http");
   const finalSrc = isRemote ? imgSrc : "/placeholder.png";
 

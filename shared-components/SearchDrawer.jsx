@@ -1,3 +1,4 @@
+import ProductCard from "@/components/products/ProductCard";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useSearchProducts } from "@/hooks/useProducts";
 import AppDrawer from "@/shared-components/AppDrawer";
@@ -29,7 +30,7 @@ const SearchDrawer = () => {
       onOpenChange={() => handleDrawerChange()}
       variant="minimal"
     >
-      <div className="h-[70vh]">
+      <div className="h-[80vh] overflow-y-auto pb-8">
         <div className="py-4 flex items-center justify-center gap-2.5">
           <input
             value={searchQuery}
@@ -45,16 +46,11 @@ const SearchDrawer = () => {
         ) : (
           <div>
             {searchResults?.length > 0 ? (
-              searchResults.map((product) => (
-                <div
-                  key={product.id}
-                  className="py-2.5 px-4 border-b border-gray-200"
-                >
-                  <p className="text-lg font-medium text-gray-800">
-                    {product.name}
-                  </p>
-                </div>
-              ))
+              <div className="grid grid-cols-4 gap-5 pb-8">
+                {searchResults.map((product) => (
+                  <ProductCard product={product} key={product.id} />
+                ))}
+              </div>
             ) : (
               <div>
                 {searchQuery ? (
