@@ -13,49 +13,35 @@ import {
 import { Edit, Eye, MoreHorizontal, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 export default function ProductCard({ product, onDelete = () => {} }) {
   const router = useRouter();
-  const [isDeleting, setIsDeleting] = useState(false);
-
   const imgSrc = (product?.images?.[0] || "").trim() || "/placeholder.png";
   const isRemote = imgSrc.startsWith("http");
   const finalSrc = isRemote ? imgSrc : "/placeholder.png";
 
   const handleCardClick = () => {
-    if (!isDeleting) {
-      router.push(`/products/${product.slug}`);
-    }
+    router.push(`/products/${product.slug}`);
   };
 
   const handleEdit = (e) => {
     e.stopPropagation();
-    if (!isDeleting) {
-      router.push(`/products/edit/${product.id}`);
-    }
+    router.push(`/products/edit/${product.id}`);
   };
 
   const handleDelete = (e) => {
     e.stopPropagation();
-    setIsDeleting(true);
     onDelete(product);
-    // Reset after a delay (optimistic delete will remove card anyway)
-    setTimeout(() => setIsDeleting(false), 500);
   };
 
   const handleViewDetails = (e) => {
     e.stopPropagation();
-    if (!isDeleting) {
-      router.push(`/products/${product.slug}`);
-    }
+    router.push(`/products/${product.slug}`);
   };
 
   return (
     <Card
-      className={`group hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden py-0 rounded-none gap-2 ${
-        isDeleting ? "opacity-50 pointer-events-none" : ""
-      }`}
+      className="group hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden py-0 rounded-none gap-2"
       onClick={handleCardClick}
     >
       {/* Image Section */}
@@ -71,13 +57,6 @@ export default function ProductCard({ product, onDelete = () => {} }) {
         <Badge className="absolute top-3 left-3 bg-primary/90 backdrop-blur-sm text-white border-0 rounded-full">
           {product.category?.name}
         </Badge>
-
-        {/* Deleting Overlay */}
-        {isDeleting && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="text-white text-sm font-medium">Deleting...</div>
-          </div>
-        )}
       </div>
 
       {/* Header with Title and Dropdown */}
@@ -89,11 +68,7 @@ export default function ProductCard({ product, onDelete = () => {} }) {
 
           {/* Dropdown Menu */}
           <DropdownMenu>
-            <DropdownMenuTrigger
-              asChild
-              onClick={(e) => e.stopPropagation()}
-              disabled={isDeleting}
-            >
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                 <MoreHorizontal className="size-6" />
               </Button>

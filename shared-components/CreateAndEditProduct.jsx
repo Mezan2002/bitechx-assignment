@@ -58,7 +58,7 @@ export default function CreateAndEditProduct({
   }, [initialData]);
 
   const breadcrumbItems = [
-    { label: "Dashboard", href: "/products" },
+    { label: "Home", href: "/products" },
     { label: "Products", href: "/products" },
     { label: isEditMode ? "Edit Product" : "Create Product" },
   ];
