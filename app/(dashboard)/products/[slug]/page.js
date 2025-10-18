@@ -1,10 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useDeleteProduct, useProduct } from "@/hooks/useProducts";
 import { BreadCrumb } from "@/shared-components/BreadCrumb";
 import DeleteConfirmDialog from "@/shared-components/DeleteConfirmDialog";
+import Loading from "@/shared-components/Loading";
 import { Edit, Trash } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -32,11 +32,7 @@ export default function ProductDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="max-w-4xl mx-auto">
-        <Skeleton className="h-96" />
-      </div>
-    );
+    return <Loading fullPage />;
   }
 
   if (!product) {
