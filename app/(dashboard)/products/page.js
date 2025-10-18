@@ -10,6 +10,7 @@ import {
 } from "@/hooks/useProducts";
 import { BreadCrumb } from "@/shared-components/BreadCrumb";
 import DeleteConfirmDialog from "@/shared-components/DeleteConfirmDialog";
+import { ErrorCard } from "@/shared-components/ErrorCard";
 import Pagination from "@/shared-components/Pagination";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -33,6 +34,19 @@ export default function ProductsPage() {
     offset,
     limit: itemsPerPage,
   });
+
+  {
+    error && (
+      <ErrorCard
+        variant="full"
+        type="server"
+        title="Oops! Something went wrong"
+        message="We're having trouble loading this page"
+        onRetry={() => window.location.reload()}
+        onGoHome={() => router.push("/")}
+      />
+    );
+  }
 
   const { data: allProducts, isLoading: isLoadingAll } = useProducts();
 
@@ -109,7 +123,7 @@ export default function ProductsPage() {
             <div className="py-8">
               <Pagination
                 currentPage={currentPage}
-                totalItems={100}
+                totalItems={allProducts?.length || 0}
                 itemsPerPage={itemsPerPage}
                 onPageChange={setCurrentPage}
               />

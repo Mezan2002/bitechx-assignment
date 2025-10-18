@@ -1,14 +1,11 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDeleteProduct, useProduct } from "@/hooks/useProducts";
 import { BreadCrumb } from "@/shared-components/BreadCrumb";
 import DeleteConfirmDialog from "@/shared-components/DeleteConfirmDialog";
-import { format } from "date-fns";
-import { ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { Edit, Trash } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -53,84 +50,66 @@ export default function ProductDetailPage() {
     );
   }
 
+  const imgSrc = (product?.images?.[0] || "").trim() || "/placeholder.png";
+  const isRemote = imgSrc.startsWith("http");
+  const finalSrc = isRemote ? imgSrc : "/placeholder.png";
+
   return (
     <div className="container mx-auto px-4">
-      <BreadCrumb items={breadcrumb} />
-      <div className="mb-6 flex justify-between items-center">
-        <Link href="/products">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Products
-          </Button>
-        </Link>
-
-        <div className="flex gap-2">
-          <Link href={`/products/edit/${product.id}`}>
-            <Button variant="outline">
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-          </Link>
-          <Button onClick={() => setShowDeleteDialog(true)}>
-            <Trash2 className="w-4 h-4 mr-2" />
-            Delete
-          </Button>
-        </div>
+      <div className="py-5">
+        <BreadCrumb items={breadcrumb} />
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <CardTitle className="text-3xl">{product.name}</CardTitle>
-            <Badge className="bg-accent-tan text-white text-lg px-4 py-2">
-              {product.category?.name}
-            </Badge>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-          {/* Images */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {product.images?.map((image, index) => (
-              <Image
-                key={index}
-                src={image}
-                width={400}
-                height={256}
-                alt={`${product.name} ${index + 1}`}
-                className="w-full h-64 object-cover rounded-lg"
-              />
-            ))}
-          </div>
-
-          {/* Price */}
-          <div className="border-t pt-4">
-            <p className="text-4xl font-bold text-accent-green">
-              ${product.price}
-            </p>
-          </div>
-
-          {/* Description */}
+      <div className="flex gap-5">
+        <div className="flex-1">
           <div>
-            <h3 className="text-xl font-semibold mb-2">Description</h3>
-            <p className="text-gray-700 leading-relaxed">
-              {product.description}
-            </p>
+            <Image
+              src={finalSrc}
+              width={400}
+              height={256}
+              alt={product?.name}
+              className="w-full h-[70vh] object-cover"
+            />
           </div>
+        </div>
+        <div className="flex-1">
+          <h2 className="text-3xl font-semibold text-primary">
+            {product?.name}
+          </h2>
+          <p className="text-lg text-gray-600">{product?.category?.name}</p>
+          <p className="text-xl font-semibold text-primary mt-3 mb-5">
+            ${product?.price}
+          </p>
 
-          {/* Meta Information */}
-          <div className="border-t pt-4 grid grid-cols-2 gap-4 text-sm text-gray-600">
-            <div>
-              <p className="font-semibold">Created</p>
-              <p>{format(new Date(product.createdAt), "PPP")}</p>
-            </div>
-            <div>
-              <p className="font-semibold">Last Updated</p>
-              <p>{format(new Date(product.updatedAt), "PPP")}</p>
+          <label className="font-semibold">Description</label>
+          <p className="text-lg line-clamp-4 min-h-40">
+            {product?.description}
+          </p>
+          <div className="mb-5">
+            <label className="font-semibold">Color</label>
+            <div className="flex items-center gap-2 mt-2">
+              <div className="size-8 rounded-full bg-red-500" />
+              <div className="size-8 rounded-full bg-green-500" />
+              <div className="size-8 rounded-full bg-blue-500" />
             </div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex gap-5">
+            <Link href={`/products/edit/${product.id}`} className="flex-1">
+              <Button className="w-full">
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            </Link>
+            <Button
+              className="flex-1 bg-red-500"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              <Trash className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <DeleteConfirmDialog
         open={showDeleteDialog}
