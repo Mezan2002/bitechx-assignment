@@ -169,7 +169,7 @@ export default function ProductsPage() {
       )}
 
       {/* Error State - Other Errors */}
-      {displayError && !isRateLimitError && (
+      {displayError && (
         <ErrorCard
           variant="full"
           type="server"

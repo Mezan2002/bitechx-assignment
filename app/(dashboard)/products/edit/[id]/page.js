@@ -22,7 +22,6 @@ export default function EditProductPage() {
       return foundProduct;
     },
   });
-  console.log("🚀 ~ EditProductPage ~ product:", product);
 
   const handleSubmit = (data) => {
     updateMutation.mutate({ id, data });
