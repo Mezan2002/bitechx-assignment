@@ -11,7 +11,6 @@ import {
 } from "@/hooks/useProducts";
 import { BreadCrumb } from "@/shared-components/BreadCrumb";
 import DeleteConfirmDialog from "@/shared-components/DeleteConfirmDialog";
-import { ErrorCard } from "@/shared-components/ErrorCard";
 import Pagination from "@/shared-components/Pagination";
 import { Plus, X } from "lucide-react";
 import Link from "next/link";
@@ -101,6 +100,10 @@ export default function ProductsPage() {
   // Handle rate limit error
   const isRateLimitError = displayError?.response?.status === 429;
 
+  console.log("🚀 ~ ProductsPage ~ displayError:", displayError);
+  console.log("🚀 ~ ProductsPage ~ isRateLimitError:", isRateLimitError);
+  console.log("🚀 ~ ProductsPage ~ displayError:", displayError);
+  console.log("🚀 ~ ProductsPage ~ isRateLimitError:", isRateLimitError);
   return (
     <div>
       {/* Header */}
@@ -169,7 +172,7 @@ export default function ProductsPage() {
       )}
 
       {/* Error State - Other Errors */}
-      {displayError && !isRateLimitError && (
+      {displayError && (
         <ErrorCard
           variant="full"
           type="server"
