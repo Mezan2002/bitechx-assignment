@@ -168,18 +168,6 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Error State - Other Errors */}
-      {displayError && (
-        <ErrorCard
-          variant="full"
-          type="server"
-          title="Oops! Something went wrong"
-          message="We're having trouble loading the products"
-          onRetry={() => refetch()}
-          onGoHome={() => router.push("/")}
-        />
-      )}
-
       {/* Products Grid */}
       {!displayError && !isLoading && !isSearching && displayProducts && (
         <>
