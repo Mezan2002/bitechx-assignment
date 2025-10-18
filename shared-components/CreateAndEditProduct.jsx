@@ -25,10 +25,10 @@ export default function CreateAndEditProduct({
   mode = "create",
   initialData = null,
   categories = [],
+  selectedCategory = "",
   onSubmit,
   isLoading = false,
   error = null,
-  productCreatedAt = null,
 }) {
   const router = useRouter();
   const isEditMode = mode === "edit";
@@ -324,6 +324,9 @@ export default function CreateAndEditProduct({
                     Category <span className="text-red-500">*</span>
                   </Label>
                   <Select
+                    defaultValue={
+                      selectedCategory && selectedCategory.categoryId
+                    }
                     value={formData.categoryId}
                     onValueChange={(value) => handleChange("categoryId", value)}
                   >
@@ -359,20 +362,6 @@ export default function CreateAndEditProduct({
                     <p className="text-red-500 text-sm">{errors.categoryId}</p>
                   )}
                 </div>
-
-                {formData.categoryId && categories && (
-                  <div className="mt-4 p-3 bg-secondary/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">
-                      Selected Category:
-                    </p>
-                    <p className="font-medium">
-                      {
-                        categories.find((c) => c.id === formData.categoryId)
-                          ?.name
-                      }
-                    </p>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>

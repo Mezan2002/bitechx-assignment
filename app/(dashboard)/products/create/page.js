@@ -1,9 +1,9 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
 import { useCategories } from "@/hooks/useCategories";
 import { useCreateProduct } from "@/hooks/useProducts";
 import CreateAndEditProduct from "@/shared-components/CreateAndEditProduct";
+import Loading from "@/shared-components/Loading";
 
 export default function CreateProductPage() {
   const createMutation = useCreateProduct();
@@ -14,11 +14,7 @@ export default function CreateProductPage() {
   };
 
   if (categoriesLoading) {
-    return (
-      <div className="container mx-auto px-4 py-6">
-        <Skeleton className="h-96" />
-      </div>
-    );
+    return <Loading fullPage />;
   }
 
   return (

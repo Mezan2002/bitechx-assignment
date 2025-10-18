@@ -1,19 +1,18 @@
 "use client";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useCategories } from "@/hooks/useCategories";
 import { useUpdateProduct } from "@/hooks/useProducts";
 import { productsAPI } from "@/lib/api";
 import CreateAndEditProduct from "@/shared-components/CreateAndEditProduct";
+import Loading from "@/shared-components/Loading";
 import { useQuery } from "@tanstack/react-query";
-import { use } from "react";
+import { useParams } from "next/navigation";
 
-export default function EditProductPage({ params }) {
-  const { id } = use(params);
+export default function EditProductPage() {
+  const { id } = useParams();
   const updateMutation = useUpdateProduct();
   const { data: categories, isLoading: categoriesLoading } = useCategories();
-
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
@@ -23,17 +22,14 @@ export default function EditProductPage({ params }) {
       return foundProduct;
     },
   });
+  console.log("🚀 ~ EditProductPage ~ product:", product);
 
   const handleSubmit = (data) => {
     updateMutation.mutate({ id, data });
   };
 
   if (productLoading || categoriesLoading) {
-    return (
-      <div className="container mx-auto px-4 py-6">
-        <Skeleton className="h-96" />
-      </div>
-    );
+    return <Loading fullPage />;
   }
 
   if (!product) {
@@ -50,6 +46,7 @@ export default function EditProductPage({ params }) {
     <CreateAndEditProduct
       mode="edit"
       initialData={product}
+      selectedCategory={product?.category}
       categories={categories || []}
       onSubmit={handleSubmit}
       isLoading={updateMutation.isPending}
