@@ -16,7 +16,7 @@ import Pagination from "@/shared-components/Pagination";
 import { Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,43 +32,30 @@ export default function ProductsPage() {
 
   const debouncedSearch = useDebounce(searchQuery, 500);
 
-  // Create stable query params
-  const queryParams = useMemo(
-    () => ({
-      offset,
-      limit: itemsPerPage,
-      ...(categoryId && { categoryId }),
-    }),
-    [offset, itemsPerPage, categoryId]
-  );
-
   // Fetch products with optional category filter
   const {
     data: products,
     isLoading,
     error,
     refetch,
-  } = useProducts(queryParams);
+  } = useProducts({
+    offset,
+    limit: itemsPerPage,
+    ...(categoryId && { categoryId }),
+  });
 
-  // Only fetch search results when searching
-  const {
-    data: searchResults,
-    isLoading: isSearching,
-    error: searchError,
-  } = useSearchProducts(debouncedSearch);
+  const { data: allProducts, isLoading: isLoadingAll } = useProducts({
+    ...(categoryId && { categoryId }),
+  });
+
+  const { data: searchResults, isLoading: isSearching } =
+    useSearchProducts(debouncedSearch);
 
   const { data: categories } = useCategories();
   const deleteMutation = useDeleteProduct();
 
   const displayProducts = debouncedSearch ? searchResults : products;
   const showPagination = !debouncedSearch && products;
-  const displayError = debouncedSearch ? searchError : error;
-
-  // Calculate total from current products length (approximate)
-  const approximateTotal =
-    products?.length === itemsPerPage
-      ? (currentPage + 2) * itemsPerPage // Assume more pages exist
-      : currentPage * itemsPerPage; // Last page
 
   // Get current category details
   const currentCategory = categories?.find((cat) => cat.id === categoryId);
@@ -80,7 +67,7 @@ export default function ProductsPage() {
   const confirmDelete = () => {
     if (deleteProduct) {
       deleteMutation.mutate(deleteProduct.id, {
-        onSettled: () => {
+        onSuccess: () => {
           setDeleteProduct(null);
         },
       });
@@ -99,7 +86,7 @@ export default function ProductsPage() {
   ];
 
   // Handle rate limit error
-  const isRateLimitError = displayError?.response?.status === 429;
+  const isRateLimitError = error?.response?.status === 429;
 
   return (
     <div>
@@ -114,7 +101,6 @@ export default function ProductsPage() {
                   <h2 className="text-3xl font-semibold text-primary">
                     {currentCategory ? currentCategory.name : "All Products"}
                   </h2>
-
                   {currentCategory && (
                     <button
                       onClick={handleClearFilter}
@@ -131,13 +117,28 @@ export default function ProductsPage() {
                   )}
                 </div>
 
-                {!isLoading && products && (
-                  <span className="text-sm font-medium text-primary">
-                    ({products.length}{" "}
-                    {products.length === 1 ? "result" : "results"})
-                  </span>
-                )}
+                <span className="text-sm font-medium text-primary">
+                  ({allProducts?.length || 0} results)
+                </span>
               </div>
+
+              {/* Category Filter Badge */}
+              {/* {currentCategory && (
+            <div className="flex items-center gap-2 mt-3">
+              <Badge className="bg-primary text-white px-3 py-1">
+                <span className="mr-2">{currentCategory.name}</span>
+              </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={handleClearFilter}
+              >
+                <X className="w-3 h-3 mr-1" />
+                Clear filter
+              </Button>
+            </div>
+          )} */}
             </div>
             <div>
               <Link href="/products/create">
@@ -152,87 +153,102 @@ export default function ProductsPage() {
       </div>
 
       {/* Error State - Rate Limit */}
-      {displayError && isRateLimitError && (
+      {error && isRateLimitError && (
         <div className="container mx-auto px-4 mb-6">
           <ErrorCard
             variant="alert"
             type="warning"
             title="Rate Limit Exceeded"
-            message="Too many requests. Please wait 30 seconds before trying again."
+            message="You've made too many requests. Please wait a moment before trying again."
             onRetry={() => {
               setTimeout(() => {
-                window.location.reload();
-              }, 30000); // Wait 30 seconds
+                refetch();
+              }, 2000);
             }}
           />
         </div>
       )}
 
-      {/* Products Grid */}
-      {!displayError && !isLoading && !isSearching && displayProducts && (
-        <>
-          {displayProducts.length === 0 ? (
-            <div className="container mx-auto px-4">
-              <div className="text-center py-12">
-                <p className="text-gray-500 text-lg mb-4">
-                  {searchQuery
-                    ? "No products found matching your search"
-                    : categoryId
-                    ? `No products found in ${currentCategory?.name} category`
-                    : "No products available"}
-                </p>
-                {(searchQuery || categoryId) && (
-                  <div className="flex gap-2 justify-center">
-                    {searchQuery && (
-                      <Button
-                        variant="outline"
-                        onClick={() => setSearchQuery("")}
-                      >
-                        Clear Search
-                      </Button>
-                    )}
-                    {categoryId && (
-                      <Button variant="outline" onClick={handleClearFilter}>
-                        View All Products
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 container mx-auto px-4">
-              {displayProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {showPagination && products && products.length > 0 && (
-            <div className="py-8">
-              <Pagination
-                currentPage={currentPage}
-                totalItems={approximateTotal}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-              />
-            </div>
-          )}
-        </>
+      {/* Error State - Other Errors */}
+      {error && !isRateLimitError && (
+        <ErrorCard
+          variant="full"
+          type="server"
+          title="Oops! Something went wrong"
+          message="We're having trouble loading the products"
+          onRetry={() => refetch()}
+          onGoHome={() => router.push("/")}
+        />
       )}
+
+      {/* Products Grid */}
+      {!error &&
+        !isLoading &&
+        !isLoadingAll &&
+        !isSearching &&
+        displayProducts && (
+          <>
+            {displayProducts.length === 0 ? (
+              <div className="container mx-auto px-4">
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-lg mb-4">
+                    {searchQuery
+                      ? "No products found matching your search"
+                      : categoryId
+                      ? `No products found in ${currentCategory?.name} category`
+                      : "No products available"}
+                  </p>
+                  {(searchQuery || categoryId) && (
+                    <div className="flex gap-2 justify-center">
+                      {searchQuery && (
+                        <Button
+                          variant="outline"
+                          onClick={() => setSearchQuery("")}
+                        >
+                          Clear Search
+                        </Button>
+                      )}
+                      {categoryId && (
+                        <Button variant="outline" onClick={handleClearFilter}>
+                          View All Products
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 container mx-auto px-4">
+                {displayProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {showPagination && products.length > 0 && (
+              <div className="py-8">
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={allProducts?.length || 0}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
+          </>
+        )}
 
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmDialog
         open={!!deleteProduct}
-        onOpenChange={() => !deleteMutation.isPending && setDeleteProduct(null)}
+        onOpenChange={() => setDeleteProduct(null)}
         onConfirm={confirmDelete}
         productName={deleteProduct?.name}
-        isDeleting={deleteMutation.isPending}
       />
     </div>
   );
