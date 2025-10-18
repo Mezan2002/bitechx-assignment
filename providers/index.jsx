@@ -3,6 +3,7 @@
 import { queryClient } from "@/lib/queryClient";
 import { setCredentials } from "@/redux/auth/authSlice";
 import { store } from "@/redux/store";
+import Loading from "@/shared-components/Loading";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Provider } from "react-redux";
@@ -30,7 +31,7 @@ function AuthRehydrator({ children }) {
   if (isRehydrating) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <Loading />
       </div>
     );
   }

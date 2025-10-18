@@ -16,7 +16,9 @@ export default function ProductDetailPage() {
   const { data: product, isLoading } = useProduct(slug);
   const deleteMutation = useDeleteProduct();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const router = useRouter();
+
   const breadcrumb = [
     { label: "Home", href: "/" },
     { label: "Products", href: "/products" },
@@ -46,9 +48,12 @@ export default function ProductDetailPage() {
     );
   }
 
-  const imgSrc = (product?.images?.[0] || "").trim() || "/placeholder.png";
-  const isRemote = imgSrc.startsWith("http");
-  const finalSrc = isRemote ? imgSrc : "/placeholder.png";
+  // Get all images or use placeholder
+  const images =
+    product?.images?.length > 0 ? product.images : ["/placeholder.png"];
+  const currentImage = images[selectedImageIndex];
+  const isRemote = currentImage.startsWith("http");
+  const finalSrc = isRemote ? currentImage : "/placeholder.png";
 
   return (
     <div className="container mx-auto px-4">
@@ -58,16 +63,49 @@ export default function ProductDetailPage() {
 
       <div className="flex gap-5">
         <div className="flex-1">
-          <div>
+          {/* Main Image */}
+          <div className="mb-4">
             <Image
               src={finalSrc}
-              width={400}
-              height={256}
+              width={800}
+              height={800}
               alt={product?.name}
-              className="w-full h-[70vh] object-cover"
+              className="w-full h-[70vh] object-contain"
+              priority
             />
           </div>
+
+          {/* Image Thumbnails */}
+          {images.length > 1 && (
+            <div className="flex gap-3 overflow-x-auto">
+              {images.map((img, index) => {
+                const thumbSrc = img.startsWith("http")
+                  ? img
+                  : "/placeholder.png";
+                return (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImageIndex(index)}
+                    className={`relative flex-shrink-0 w-24 h-24 border-2 transition-all ${
+                      selectedImageIndex === index
+                        ? "border-primary"
+                        : "border-gray-200 hover:border-gray-400"
+                    }`}
+                  >
+                    <Image
+                      src={thumbSrc}
+                      width={96}
+                      height={96}
+                      alt={`${product.name} - Image ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
+
         <div className="flex-1">
           <h2 className="text-3xl font-semibold text-primary">
             {product?.name}
@@ -97,7 +135,7 @@ export default function ProductDetailPage() {
               </Button>
             </Link>
             <Button
-              className="flex-1 bg-red-500"
+              className="flex-1 bg-red-500 hover:bg-red-600"
               onClick={() => setShowDeleteDialog(true)}
             >
               <Trash className="w-4 h-4 mr-2" />
@@ -112,6 +150,7 @@ export default function ProductDetailPage() {
         onOpenChange={setShowDeleteDialog}
         onConfirm={handleDelete}
         productName={product.name}
+        isDeleting={deleteMutation.isPending}
       />
     </div>
   );
