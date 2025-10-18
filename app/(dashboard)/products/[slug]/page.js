@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDeleteProduct, useProduct } from "@/hooks/useProducts";
+import { BreadCrumb } from "@/shared-components/BreadCrumb";
 import DeleteConfirmDialog from "@/shared-components/DeleteConfirmDialog";
 import { format } from "date-fns";
 import { ArrowLeft, Edit, Trash2 } from "lucide-react";
@@ -19,6 +20,11 @@ export default function ProductDetailPage() {
   const deleteMutation = useDeleteProduct();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const router = useRouter();
+  const breadcrumb = [
+    { label: "Home", href: "/" },
+    { label: "Products", href: "/products" },
+    { label: product?.name || "Product" },
+  ];
 
   const handleDelete = () => {
     deleteMutation.mutate(product.id, {
@@ -48,7 +54,8 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="container mx-auto px-4">
+      <BreadCrumb items={breadcrumb} />
       <div className="mb-6 flex justify-between items-center">
         <Link href="/products">
           <Button variant="ghost" size="sm">
