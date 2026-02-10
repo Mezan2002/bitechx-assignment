@@ -1,141 +1,84 @@
-import { productsAPI } from "@/lib/api";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { DUMMY_PRODUCTS } from "@/lib/dummyData";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-// Helper to check auth
-const isAuthenticated = () => {
-  if (typeof window === "undefined") return false;
-  return !!localStorage.getItem("auth_token");
-};
-
 export const useProducts = (params = {}) => {
-  return useQuery({
-    queryKey: ["products", params],
-    queryFn: () => productsAPI.getAll(params).then((res) => res.data),
-    enabled: isAuthenticated(), // ✅ Only fetch if authenticated
-    staleTime: 1000 * 60 * 5,
-  });
+  const { offset = 0, limit, categoryId } = params;
+
+  let filtered = [...DUMMY_PRODUCTS];
+
+  if (categoryId) {
+    filtered = filtered.filter((p) => p.category.id === categoryId);
+  }
+
+  const sliced = limit ? filtered.slice(offset, offset + limit) : filtered;
+
+  return {
+    data: sliced,
+    isLoading: false,
+    error: null,
+    refetch: () => {},
+  };
 };
 
 export const useProduct = (slug) => {
-  return useQuery({
-    queryKey: ["product", slug],
-    queryFn: () => productsAPI.getBySlug(slug).then((res) => res.data),
-    enabled: !!slug && isAuthenticated(), // ✅ Only fetch if authenticated
-    staleTime: 1000 * 60 * 5,
-  });
+  const product = DUMMY_PRODUCTS.find((p) => p.slug === slug) || null;
+
+  return {
+    data: product,
+    isLoading: false,
+    error: null,
+  };
 };
 
 export const useSearchProducts = (searchedText) => {
-  return useQuery({
-    queryKey: ["products", "search", searchedText],
-    queryFn: () => productsAPI.search(searchedText).then((res) => res.data),
-    enabled: searchedText.length > 0 && isAuthenticated(), // ✅ Only fetch if authenticated
-    staleTime: 1000 * 60 * 2,
-  });
+  const results =
+    searchedText && searchedText.length > 0
+      ? DUMMY_PRODUCTS.filter((p) =>
+          p.name.toLowerCase().includes(searchedText.toLowerCase()),
+        )
+      : [];
+
+  return {
+    data: results,
+    isLoading: false,
+    error: null,
+  };
 };
 
 export const useCreateProduct = () => {
-  const queryClient = useQueryClient();
   const router = useRouter();
 
-  return useMutation({
-    mutationFn: (data) => productsAPI.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product created successfully!");
+  return {
+    mutate: (data) => {
+      toast.success("Product created successfully! (dummy)");
       router.push("/products");
     },
-    onError: (error) => {
-      const message = error.response?.data?.message;
-      if (message?.includes("Authorization")) {
-        toast.error("Session expired. Please login again.");
-        router.push("/login");
-      } else {
-        toast.error(message || "Failed to create product");
-      }
-    },
-  });
+    isPending: false,
+    error: null,
+  };
 };
 
 export const useUpdateProduct = () => {
-  const queryClient = useQueryClient();
   const router = useRouter();
 
-  return useMutation({
-    mutationFn: ({ id, data }) => productsAPI.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["product"] });
-      toast.success("Product updated successfully!");
+  return {
+    mutate: ({ id, data }) => {
+      toast.success("Product updated successfully! (dummy)");
       router.push("/products");
     },
-    onError: (error) => {
-      const message = error.response?.data?.message;
-      if (message?.includes("Authorization")) {
-        toast.error("Session expired. Please login again.");
-        router.push("/login");
-      } else {
-        toast.error(message || "Failed to update product");
-      }
-    },
-  });
+    isPending: false,
+    error: null,
+  };
 };
 
 export const useDeleteProduct = () => {
-  const queryClient = useQueryClient();
-  const router = useRouter();
-
-  return useMutation({
-    mutationFn: async (id) => {
-      const response = await productsAPI.delete(id);
-      return { id, data: response.data };
+  return {
+    mutate: (id, options) => {
+      toast.success("Product deleted successfully! (dummy)");
+      if (options?.onSuccess) options.onSuccess();
     },
-
-    onMutate: async (productId) => {
-      await queryClient.cancelQueries({ queryKey: ["products"] });
-
-      const previousQueries = [];
-
-      queryClient
-        .getQueriesData({ queryKey: ["products"] })
-        .forEach(([queryKey, data]) => {
-          if (data) {
-            previousQueries.push({ queryKey, data });
-
-            queryClient.setQueryData(queryKey, (old) => {
-              if (Array.isArray(old)) {
-                return old.filter((product) => product.id !== productId);
-              }
-              return old;
-            });
-          }
-        });
-
-      return { previousQueries, productId };
-    },
-
-    onSuccess: () => {
-      toast.success("Product deleted successfully!");
-    },
-
-    onError: (error, productId, context) => {
-      console.error("Delete failed:", error);
-
-      if (context?.previousQueries) {
-        context.previousQueries.forEach(({ queryKey, data }) => {
-          queryClient.setQueryData(queryKey, data);
-        });
-      }
-
-      const message = error.response?.data?.message;
-      if (message?.includes("Authorization")) {
-        toast.error("Session expired. Please login again.");
-        router.push("/login");
-      } else {
-        toast.error(message || "Failed to delete product");
-      }
-    },
-  });
+    isPending: false,
+    error: null,
+  };
 };

@@ -5,55 +5,31 @@ import { queryClient } from "@/lib/queryClient";
 import { setCredentials } from "@/redux/auth/authSlice";
 import { store } from "@/redux/store";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Provider } from "react-redux";
 
 function AuthRehydrator({ children }) {
-  const [isRehydrating, setIsRehydrating] = useState(true);
-
   useEffect(() => {
-    // Rehydrate auth from localStorage ONCE
-    try {
-      const token = localStorage.getItem("auth_token");
-      const email = localStorage.getItem("auth_email");
+    // Auto-inject dummy credentials for design preview
+    store.dispatch(
+      setCredentials({
+        token: "dummy-token-for-design-preview",
+        email: "demo@bitechx.com",
+      }),
+    );
 
-      if (token && email) {
-        store.dispatch(setCredentials({ token, email }));
-      }
+    try {
+      localStorage.setItem("auth_token", "dummy-token-for-design-preview");
+      localStorage.setItem("auth_email", "demo@bitechx.com");
     } catch (error) {
-      console.error("Failed to rehydrate auth:", error);
-    } finally {
-      setIsRehydrating(false);
+      console.error("Failed to set dummy auth:", error);
     }
   }, []);
-
-  if (isRehydrating) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return children;
 }
 
 export function Providers({ children }) {
-  // Persist state to localStorage on changes
-  useEffect(() => {
-    const unsubscribe = store.subscribe(() => {
-      const state = store.getState();
-      if (state.auth.token) {
-        localStorage.setItem("auth_token", state.auth.token);
-        localStorage.setItem("auth_email", state.auth.email);
-      } else {
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("auth_email");
-      }
-    });
-    return unsubscribe;
-  }, []);
-
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
